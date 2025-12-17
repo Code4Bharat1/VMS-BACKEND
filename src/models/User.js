@@ -10,9 +10,11 @@ const userSchema = new mongoose.Schema(
 
     password: { type: String, required: true },
 
+    assignedBay: { type: String, default: "" },
+
     role: {
       type: String,
-      enum: ["admin", "staff"],
+      enum: ["admin", "staff", "supervisor"],
       default: "staff",
     },
 

@@ -8,6 +8,7 @@ export const manualEntry = async (req, res) => {
       visitorName,
       visitorMobile,
       visitorCompany,
+      qidNumber,
       vehicleNumber,
       vehicleType,
       vendorId,
@@ -18,12 +19,13 @@ export const manualEntry = async (req, res) => {
       visitorName,
       visitorMobile,
       visitorCompany,
+      qidNumber,
       vehicleNumber: vehicleNumber.toUpperCase(),
       vehicleType,
       vendorId,
       bayId,
       entryMethod: "manual",
-      createdBy: req.user.id,
+
     });
 
     return res.json({ success: true, entry });

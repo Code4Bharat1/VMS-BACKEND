@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 // ---------------- CREATE STAFF ----------------
 export const createStaff = async (req, res) => {
   try {
-    const { name, email, phone, password } = req.body;
+    const { name, email, phone, assignedBay, password } = req.body;
 
     const exists = await User.findOne({ email });
     if (exists) {
@@ -19,6 +19,7 @@ export const createStaff = async (req, res) => {
       phone,
       password: hashedPassword,
       role: "staff",
+      assignedBay,
     });
 
     return res.json({

@@ -7,6 +7,7 @@ const baySchema = new mongoose.Schema(
     bayType: { type: String, default: "general" }, 
     // Optional: You can allow admin to categorize bays (A1, B3, Loading, Dock, etc.)
 
+    
     status: {
       type: String,
       enum: ["active", "inactive"],

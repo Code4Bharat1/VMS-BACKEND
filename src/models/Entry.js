@@ -6,6 +6,7 @@ const entrySchema = new mongoose.Schema(
     visitorName: { type: String },
     visitorMobile: { type: String },
     visitorCompany: { type: String },
+    qidNumber: { type: String },
 
     // Vehicle Information
     vehicleNumber: { type: String, required: true },

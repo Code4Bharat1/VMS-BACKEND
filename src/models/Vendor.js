@@ -8,8 +8,10 @@ const vendorSchema = new mongoose.Schema(
 
     mobile: { type: String, required: true },
 
-    registeredVehicles: { type: Number, default: 0 },
+    registeredVehicles: { type: [String], default: [] }, // array of strings
 
+    date: { type: Date, default: Date.now },
+    
     status: {
       type: String,
       enum: ["active", "inactive"],
