@@ -13,7 +13,7 @@ const router = express.Router();
 
 // Admin-only routes
 router.post("/", protect, adminOnly, createBay);
-router.get("/", protect, adminOnly, getBays);
+router.get("/",  getBays);
 router.put("/:id", protect, adminOnly, updateBay);
 router.patch("/:id/status", protect, adminOnly, toggleBayStatus);
 router.delete("/:id", protect, adminOnly, deleteBay);

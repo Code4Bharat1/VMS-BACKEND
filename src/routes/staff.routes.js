@@ -12,7 +12,7 @@ const router = express.Router();
 
 // Admin-only access
 router.post("/", protect, adminOnly, createStaff);
-router.get("/", protect, adminOnly, getAllStaff);
+router.get("/",  getAllStaff);
 router.put("/:id", protect, adminOnly, updateStaff);
 router.patch("/:id/status", protect, adminOnly, toggleStaffStatus);
 
