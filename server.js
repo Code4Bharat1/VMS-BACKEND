@@ -6,6 +6,7 @@ import { connectDB } from "./src/config/db.js";
 // Routes
 import authRoutes from "./src/routes/auth.routes.js";
 import staffRoutes from "./src/routes/staff.routes.js";
+import supervisorRoutes from "./src/routes/supervisor.routes.js"; 
 import vendorRoutes from "./src/routes/vendor.routes.js";
 import bayRoutes from "./src/routes/bay.routes.js";
 import entryRoutes from "./src/routes/entry.routes.js";
@@ -30,6 +31,7 @@ app.get("/api/v1/health", (req, res) => {
 // --------------------- API Routes --------------------- //
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/staff", staffRoutes);
+app.use("/api/v1/supervisors", supervisorRoutes);
 app.use("/api/v1/vendors", vendorRoutes);
 app.use("/api/v1/bays", bayRoutes);
 app.use("/api/v1/entries", entryRoutes);

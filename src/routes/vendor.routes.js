@@ -12,8 +12,8 @@ import { protect, adminOnly } from "../middleware/auth.middleware.js";
 const router = express.Router();
 
 // Only admin can manage vendors
-router.post("/", protect, adminOnly, createVendor);
-router.get("/", protect, adminOnly, getVendors);
+router.post("/", createVendor);
+router.get("/", getVendors);
 router.put("/:id", protect, adminOnly, updateVendor);
 router.patch("/:id/status", protect, adminOnly, toggleVendorStatus);
 router.delete("/:id", protect, adminOnly, deleteVendor);

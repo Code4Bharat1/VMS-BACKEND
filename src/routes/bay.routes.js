@@ -12,7 +12,7 @@ import { protect, adminOnly } from "../middleware/auth.middleware.js";
 const router = express.Router();
 
 // Admin-only routes
-router.post("/", protect, adminOnly, createBay);
+router.post("/", createBay);
 router.get("/",  getBays);
 router.put("/:id", protect, adminOnly, updateBay);
 router.patch("/:id/status", protect, adminOnly, toggleBayStatus);
