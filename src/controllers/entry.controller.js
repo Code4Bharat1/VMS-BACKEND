@@ -1,6 +1,8 @@
 import Entry from "../models/Entry.js";
 import Vendor from "../models/Vendor.js";
 import Bay from "../models/Bay.js";
+import mongoose from "mongoose";
+
 
 export const manualEntry = async (req, res) => {
   try {
@@ -11,9 +13,22 @@ export const manualEntry = async (req, res) => {
       qidNumber,
       vehicleNumber,
       vehicleType,
-      vendorId,
+      purpose,
       bayId,
+      createdBy, // we expect frontend to send this
     } = req.body;
+
+    if (!vehicleNumber || !bayId || !createdBy) {
+      return res.status(400).json({ message: "Vehicle number, Bay and createdBy are required" });
+    }
+
+    // Optional: validate ObjectIds
+    if (!mongoose.Types.ObjectId.isValid(bayId)) {
+      return res.status(400).json({ message: "Invalid bayId" });
+    }
+    if (!mongoose.Types.ObjectId.isValid(createdBy)) {
+      return res.status(400).json({ message: "Invalid createdBy" });
+    }
 
     const entry = await Entry.create({
       visitorName,
@@ -22,14 +37,15 @@ export const manualEntry = async (req, res) => {
       qidNumber,
       vehicleNumber: vehicleNumber.toUpperCase(),
       vehicleType,
-      vendorId,
+      purpose,
       bayId,
       entryMethod: "manual",
-
+      createdBy, // required by schema
     });
 
-    return res.json({ success: true, entry });
+    return res.status(201).json({ success: true, entry });
   } catch (err) {
+    console.error("Manual Entry Error:", err);
     return res.status(500).json({ message: err.message });
   }
 };

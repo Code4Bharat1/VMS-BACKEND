@@ -1,3 +1,5 @@
+// Bay.js
+
 import mongoose from "mongoose";
 
 const baySchema = new mongoose.Schema(

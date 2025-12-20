@@ -1,3 +1,5 @@
+// User.js
+
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
@@ -10,7 +12,7 @@ const userSchema = new mongoose.Schema(
 
     password: { type: String, required: true },
 
-    assignedBay: { type: String, default: "" },
+    assignedBay: { type: mongoose.Schema.Types.ObjectId, ref : "Bay" },
 
     role: {
       type: String,

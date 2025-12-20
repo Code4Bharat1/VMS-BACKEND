@@ -35,7 +35,7 @@ export const createStaff = async (req, res) => {
 // ---------------- GET ALL STAFF ----------------
 export const getAllStaff = async (req, res) => {
   try {
-    const staffList = await User.find({ role: "staff" }).select("-password");
+    const staffList = await User.find({ role: "staff" }).select("-password").populate("assignedBay");
     return res.json({ success: true, staff: staffList });
   } catch (err) {
     return res.status(500).json({ message: err.message });
