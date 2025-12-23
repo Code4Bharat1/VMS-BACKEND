@@ -31,11 +31,11 @@ const entrySchema = new mongoose.Schema(
     outTime: { type: Date, default: null },
 
     // Entry Method: Manual / OCR / QR
-    entryMethod: {
-      type: String,
-      enum: ["manual", "ocr", "qr"],
-      default: "manual",
-    },
+    // entryMethod: {
+    //   type: String,
+    //   enum: ["manual", "ocr", "qr"],
+    //   default: "manual",
+    // },
 
     // Created by (Staff)
     createdBy: {
@@ -44,8 +44,7 @@ const entrySchema = new mongoose.Schema(
       required: true,
     },
 
-    // Returning Vehicle Flag
-    isReturning: { type: Boolean, default: false }
+  
   },
   { timestamps: true }
 );
