@@ -1,5 +1,3 @@
-// User.js
-
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
@@ -12,7 +10,19 @@ const userSchema = new mongoose.Schema(
 
     password: { type: String, required: true },
 
-    assignedBay: { type: mongoose.Schema.Types.ObjectId, ref : "Bay" },
+    // Staff → ONE bay
+    assignedBay: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Bay",
+    },
+
+    // Supervisor → MULTIPLE bays
+    managedBays: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Bay",
+      },
+    ],
 
     role: {
       type: String,

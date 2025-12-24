@@ -4,23 +4,39 @@ export const protect = (req, res, next) => {
   try {
     let token = req.headers.authorization;
 
-    if (!token) return res.status(401).json({ message: "No token provided" });
+    if (!token) {
+      return res.status(401).json({ message: "No token provided" });
+    }
 
     token = token.replace("Bearer ", "");
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    req.user = decoded;
+    req.user = decoded; // { id, role, iat, exp }
 
     next();
   } catch (err) {
-    res.status(401).json({ message: "Invalid token" });
+    return res.status(401).json({ message: "Invalid token" });
   }
 };
 
 export const adminOnly = (req, res, next) => {
-  if (req.user.role !== "admin")
+  if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Admin only route" });
+  }
+  next();
+};
 
+export const supervisorOnly = (req, res, next) => {
+  if (req.user.role !== "supervisor") {
+    return res.status(403).json({ message: "Supervisor only route" });
+  }
+  next();
+};
+
+export const staffOnly = (req, res, next) => {
+  if (req.user.role !== "staff") {
+    return res.status(403).json({ message: "Staff only route" });
+  }
   next();
 };

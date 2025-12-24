@@ -4,7 +4,7 @@ import {
   getBays,
   updateBay,
   toggleBayStatus,
-  deleteBay
+  deleteBay,
 } from "../controllers/bay.controller.js";
 
 import { protect, adminOnly } from "../middleware/auth.middleware.js";
@@ -13,7 +13,7 @@ const router = express.Router();
 
 // Admin-only routes
 router.post("/", createBay);
-router.get("/",  getBays);
+router.get("/", getBays);
 router.put("/:id", protect, adminOnly, updateBay);
 router.patch("/:id/status", protect, adminOnly, toggleBayStatus);
 router.delete("/:id", protect, adminOnly, deleteBay);

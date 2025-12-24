@@ -35,7 +35,10 @@ export const createStaff = async (req, res) => {
 // ---------------- GET ALL STAFF ----------------
 export const getAllStaff = async (req, res) => {
   try {
-    const staffList = await User.find({ role: "staff" }).select("-password").populate("assignedBay");
+    const staffList = await User.find({ role: "staff" })
+      .select("-password")
+      .populate("assignedBay");
+
     return res.json({ success: true, staff: staffList });
   } catch (err) {
     return res.status(500).json({ message: err.message });
@@ -77,6 +80,40 @@ export const toggleStaffStatus = async (req, res) => {
       success: true,
       message: "Status updated",
       isActive: staff.isActive,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+// ---------------- SUPERVISOR ASSIGNS STAFF TO BAY ----------------
+export const assignStaffToBay = async (req, res) => {
+  try {
+    const supervisorId = req.user.id;
+    const { staffId, bayId } = req.body;
+
+    const supervisor = await User.findById(supervisorId);
+    if (!supervisor || supervisor.role !== "supervisor") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    if (!supervisor.managedBays || !supervisor.managedBays.includes(bayId)) {
+      return res.status(403).json({
+        message: "Bay not under your supervision",
+      });
+    }
+
+    const staff = await User.findById(staffId);
+    if (!staff || staff.role !== "staff") {
+      return res.status(404).json({ message: "Staff not found" });
+    }
+
+    staff.assignedBay = bayId;
+    await staff.save();
+
+    return res.json({
+      success: true,
+      message: "Staff assigned to bay successfully",
     });
   } catch (err) {
     return res.status(500).json({ message: err.message });

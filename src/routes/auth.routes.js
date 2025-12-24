@@ -1,17 +1,20 @@
 import express from "express";
-import { loginUser, registerUser, supervisorOnly } from "../controllers/auth.controller.js";
+import {
+  createStaff,
+  createSupervisor,
+  loginUser,
+  registerUser,
+} from "../controllers/auth.controller.js";
 import { protect, adminOnly } from "../middleware/auth.middleware.js";
-import { get } from "mongoose";
 
 const router = express.Router();
 
-// LOGIN (public)
+// Public
 router.post("/login", loginUser);
 
-// REGISTER (Admin only - secured)
+// Admin only
 router.post("/register", protect, adminOnly, registerUser);
-
-// SUPERVISOR ONLY (Admin only - secured)
-router.post("/supervisor", adminOnly,supervisorOnly);
+router.post("/supervisor", protect, adminOnly, createSupervisor);
+router.post("/staff", protect, adminOnly, createStaff);
 
 export default router;
