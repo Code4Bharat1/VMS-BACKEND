@@ -35,9 +35,7 @@ export const createSupervisor = async (req, res) => {
 // ---------------- GET ALL SUPERVISORS ----------------
 export const getAllSupervisors = async (req, res) => {
   try {
-    const supervisorList = await User.find({ role: "supervisor" }).select(
-      "-password"
-    );
+    const supervisorList = await User.find({ role: "supervisor" }).select("-password").populate("assignedBay");
 
     return res.json({
       success: true,
