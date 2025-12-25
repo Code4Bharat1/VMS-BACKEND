@@ -28,7 +28,7 @@ const app = express();
 
 // --------------------- Middlewares --------------------- //
 app.use(cors({
-  origin : 'www.vms.nexcorealliance.com' || "https:vms.nexcorealliance.com",
+  origin : 'https://www.vms.nexcorealliance.com' || "https://vms.nexcorealliance.com",
   credentials : true,
 }));
 app.use(express.json());
