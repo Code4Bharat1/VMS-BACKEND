@@ -3,7 +3,7 @@ import Vendor from "../models/Vendor.js";
 // ---------------- CREATE VENDOR ----------------
 export const createVendor = async (req, res) => {
   try {
-    const { companyName, contactPerson, mobile, registeredVehicles } = req.body;
+    const { companyName, contactPerson, mobile } = req.body;
 
     const exists = await Vendor.findOne({ mobile });
     if (exists) {
@@ -14,7 +14,6 @@ export const createVendor = async (req, res) => {
       companyName,
       contactPerson,
       mobile,
-      registeredVehicles,
     });
 
     res.json({ success: true, message: "Vendor created", vendor });

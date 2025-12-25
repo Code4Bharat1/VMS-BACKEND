@@ -28,6 +28,7 @@ const app = express();
 
 // --------------------- Middlewares --------------------- //
 const allowedOrigins = [
+  "http://localhost:3000",
   "https://vms.nexcorealliance.com",
   "https://www.vms.nexcorealliance.com",
 ];
