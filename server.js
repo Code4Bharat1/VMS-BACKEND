@@ -27,10 +27,27 @@ dotenv.config();
 const app = express();
 
 // --------------------- Middlewares --------------------- //
-app.use(cors({
-  origin : 'https://www.vms.nexcorealliance.com' || "https://vms.nexcorealliance.com",
-  credentials : true,
-}));
+const allowedOrigins = [
+  "https://vms.nexcorealliance.com",
+  "https://www.vms.nexcorealliance.com",
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // allow requests with no origin (Postman, mobile apps)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
 // Rate Limiter
