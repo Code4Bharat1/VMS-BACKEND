@@ -12,7 +12,7 @@ import { protect } from "../middleware/auth.middleware.js";
 const router = express.Router();
 
 // Staff routes
-router.post("/manual", manualEntry);
+router.post("/manual", protect, manualEntry);
 
 // Returning vehicle detection
 router.get("/returning/:vehicleNumber", protect, checkReturningVehicle);
@@ -24,6 +24,6 @@ router.patch("/:id/exit", protect, exitEntry);
 router.get("/search", protect, searchEntries);
 
 // Admin fetch all
-router.get("/", getAllEntries);
+router.get("/",protect, getAllEntries);
 
 export default router;
