@@ -28,7 +28,7 @@ const app = express();
 
 // --------------------- Middlewares --------------------- //
 app.use(cors({
-  origin : 'http://localhost:3000',
+  origin : 'www.vms.nexcorealliance.com' || "https:vms.nexcorealliance.com",
   credentials : true,
 }));
 app.use(express.json());
@@ -61,7 +61,7 @@ app.use((err, req, res, next) => {
 });
 
 // --------------------- Start Server --------------------- //
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 6094;
 
 connectDB().then(() => {
   app.listen(PORT, () => {
