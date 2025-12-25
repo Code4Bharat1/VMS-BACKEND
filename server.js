@@ -11,6 +11,16 @@ import vendorRoutes from "./src/routes/vendor.routes.js";
 import bayRoutes from "./src/routes/bay.routes.js";
 import entryRoutes from "./src/routes/entry.routes.js";
 import ocrRoutes from "./src/routes/ocr.routes.js";
+import rateLimit from "express-rate-limit";
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  message: {
+    success: false,
+    message: "Too many requests, please try again later",
+  },
+});
 
 dotenv.config();
 
@@ -22,6 +32,9 @@ app.use(cors({
   credentials : true,
 }));
 app.use(express.json());
+
+// Rate Limiter
+app.use("/api", limiter);
 
 // --------------------- Health Check --------------------- //
 app.get("/api/v1/health", (req, res) => {
@@ -36,6 +49,7 @@ app.use("/api/v1/vendors", vendorRoutes);
 app.use("/api/v1/bays", bayRoutes);
 app.use("/api/v1/entries", entryRoutes);
 app.use("/api/v1/ocr", ocrRoutes);
+
 
 // --------------------- Error Handler --------------------- //
 app.use((err, req, res, next) => {

@@ -25,7 +25,10 @@ const entrySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Bay",
     },
-
+    assignedBay: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Bay",
+    },
     // Entry/Exit Times
     inTime: { type: Date, default: Date.now },
     outTime: { type: Date, default: null },

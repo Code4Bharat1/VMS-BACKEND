@@ -116,6 +116,7 @@ export const getAllEntries = async (req, res) => {
   try {
     const entries = await Entry.find()
       .populate("vendorId bayId createdBy")
+      .populate("assignedBay")
       .sort({ createdAt: -1 });
 
     res.json({ success: true, entries });
