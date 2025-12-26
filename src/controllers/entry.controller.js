@@ -1,8 +1,5 @@
-import Entry from "../models/Entry.js";
-import Vendor from "../models/Vendor.js";
-import Bay from "../models/Bay.js";
+import { Entry } from "../models/entry.model.js";
 import mongoose from "mongoose";
-
 
 export const manualEntry = async (req, res) => {
   try {
@@ -19,7 +16,9 @@ export const manualEntry = async (req, res) => {
     } = req.body;
 
     if (!vehicleNumber || !bayId || !createdBy) {
-      return res.status(400).json({ message: "Vehicle number, Bay and createdBy are required" });
+      return res
+        .status(400)
+        .json({ message: "Vehicle number, Bay and createdBy are required" });
     }
 
     // Optional: validate ObjectIds

@@ -1,4 +1,4 @@
-import Vendor from "../models/Vendor.js";
+import { Vendor } from "../models/vendor.model.js";
 
 // ---------------- CREATE VENDOR ----------------
 export const createVendor = async (req, res) => {
@@ -90,8 +90,7 @@ export const deleteVendor = async (req, res) => {
   try {
     const vendor = await Vendor.findByIdAndDelete(req.params.id);
 
-    if (!vendor)
-      return res.status(404).json({ message: "Vendor not found" });
+    if (!vendor) return res.status(404).json({ message: "Vendor not found" });
 
     res.json({ success: true, message: "Vendor deleted" });
   } catch (err) {
