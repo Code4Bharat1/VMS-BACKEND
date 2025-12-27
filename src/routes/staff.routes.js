@@ -6,7 +6,6 @@ import {
   toggleStaffStatus,
   assignStaffToBay,
 } from "../controllers/staff.controller.js";
-
 import {
   protect,
   adminOnly,
@@ -16,9 +15,9 @@ import {
 const router = express.Router();
 
 // Admin-only
-router.post("/", protect, adminOnly, createStaff);
-router.get("/", protect, adminOnly, getAllStaff);
-router.put("/:id", protect, adminOnly, updateStaff);
+router.post("/", protect, createStaff);
+router.get("/", protect, getAllStaff);
+router.put("/:id", protect, updateStaff);
 router.patch("/:id/status", protect, adminOnly, toggleStaffStatus);
 
 // Supervisor-only
