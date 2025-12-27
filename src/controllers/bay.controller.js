@@ -1,4 +1,4 @@
-import Bay from "../models/Bay.js";
+import { Bay } from "../models/bay.model.js";
 
 // ---------------- CREATE BAY ----------------
 export const createBay = async (req, res) => {

@@ -46,10 +46,8 @@ const entrySchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-
-  
   },
   { timestamps: true }
 );
 
-export default mongoose.model("Entry", entrySchema);
+export const Entry = mongoose.model("Entry", entrySchema);

@@ -1,4 +1,4 @@
-import User from "../models/User.js";
+import { User } from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 
 // ---------------- CREATE SUPERVISOR ----------------
@@ -35,7 +35,9 @@ export const createSupervisor = async (req, res) => {
 // ---------------- GET ALL SUPERVISORS ----------------
 export const getAllSupervisors = async (req, res) => {
   try {
-    const supervisorList = await User.find({ role: "supervisor" }).select("-password").populate("assignedBay");
+    const supervisorList = await User.find({ role: "supervisor" })
+      .select("-password")
+      .populate("assignedBay");
 
     return res.json({
       success: true,
