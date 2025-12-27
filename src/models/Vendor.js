@@ -6,9 +6,13 @@ const vendorSchema = new mongoose.Schema(
 
     contactPerson: { type: String, required: true },
 
-
     mobile: { type: String, required: true },
 
+    shopId: { type: String, required:true},
+    
+    floorNo: { type: String, required:true },
+
+    crNo: { type: String, required: true},
     // registeredVehicles: { type: [String], default: [] }, // array of strings
 
     date: { type: Date, default: Date.now },
