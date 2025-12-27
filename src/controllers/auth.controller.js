@@ -39,7 +39,11 @@ export const loginUser = async (req, res) => {
     let { email, password } = req.body;
     email = email.toLowerCase().trim();
 
-    const user = await User.findOne({ email });
+    // const user = await User.findOne({ email });
+    const user = await User.findOne({ email })
+  .populate("managedBays", "_id bayName")
+  .populate("assignedBay", "_id bayName");
+
 
     if (!user) {
       return res.status(400).json({ message: "User not found" });
