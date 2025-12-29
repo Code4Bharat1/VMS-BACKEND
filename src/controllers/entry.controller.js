@@ -114,7 +114,10 @@ export const searchEntries = async (req, res) => {
 export const getAllEntries = async (req, res) => {
   try {
     const entries = await Entry.find()
-      .populate("vendorId bayId createdBy")
+      .populate("vendorId", "companyName")
+.populate("bayId", "bayName")
+.populate("createdBy", "name role")
+
       .populate("assignedBay")
       .sort({ createdAt: -1 });
 
