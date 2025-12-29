@@ -1,4 +1,4 @@
-import { User } from "../models/user.model.js";
+import { Staff } from "../models/staff.model.js";
 import bcrypt from "bcryptjs";
 
 // ---------------- CREATE STAFF ----------------
@@ -6,14 +6,14 @@ export const createStaff = async (req, res) => {
   try {
     const { name, email, phone, assignedBay, password } = req.body;
 
-    const exists = await User.findOne({ email });
+    const exists = await Staff.findOne({ email });
     if (exists) {
       return res.status(400).json({ message: "Email already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const staff = await User.create({
+    const staff = await Staff.create({
       name,
       email,
       phone,
@@ -35,7 +35,7 @@ export const createStaff = async (req, res) => {
 // ---------------- GET ALL STAFF ----------------
 export const getAllStaff = async (req, res) => {
   try {
-    const staffList = await User.find({ role: "staff" })
+    const staffList = await Staff.find({ role: "staff" })
       .select("-password")
       .populate("assignedBay");
 
@@ -53,7 +53,7 @@ export const updateStaff = async (req, res) => {
 
     delete updates.password;
 
-    const updated = await User.findByIdAndUpdate(id, updates, {
+    const updated = await Staff.findByIdAndUpdate(id, updates, {
       new: true,
     }).select("-password");
 
@@ -70,7 +70,7 @@ export const toggleStaffStatus = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const staff = await User.findById(id);
+    const staff = await Staff.findById(id);
     if (!staff) return res.status(404).json({ message: "Staff not found" });
 
     staff.isActive = !staff.isActive;
@@ -89,10 +89,10 @@ export const toggleStaffStatus = async (req, res) => {
 // ---------------- SUPERVISOR ASSIGNS STAFF TO BAY ----------------
 export const assignStaffToBay = async (req, res) => {
   try {
-    const supervisorId = req.user.id;
+    const supervisorId = req.Staff.id;
     const { staffId, bayId } = req.body;
 
-    const supervisor = await User.findById(supervisorId);
+    const supervisor = await Staff.findById(supervisorId);
     if (!supervisor || supervisor.role !== "supervisor") {
       return res.status(403).json({ message: "Unauthorized" });
     }
@@ -103,7 +103,7 @@ export const assignStaffToBay = async (req, res) => {
       });
     }
 
-    const staff = await User.findById(staffId);
+    const staff = await Staff.findById(staffId);
     if (!staff || staff.role !== "staff") {
       return res.status(404).json({ message: "Staff not found" });
     }

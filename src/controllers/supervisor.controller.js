@@ -1,4 +1,4 @@
-import { User } from "../models/user.model.js";
+import { Supervisor } from "../models/supervisor.model.js";
 import bcrypt from "bcryptjs";
 
 // ---------------- CREATE SUPERVISOR ----------------
@@ -6,14 +6,14 @@ export const createSupervisor = async (req, res) => {
   try {
     const { name, email, phone, assignedBay, password } = req.body;
 
-    const exists = await User.findOne({ email });
+    const exists = await Supervisor.findOne({ email });
     if (exists) {
       return res.status(400).json({ message: "Email already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const supervisor = await User.create({
+    const supervisor = await Supervisor.create({
       name,
       email,
       phone,
@@ -35,7 +35,7 @@ export const createSupervisor = async (req, res) => {
 // ---------------- GET ALL SUPERVISORS ----------------
 export const getAllSupervisors = async (req, res) => {
   try {
-    const supervisorList = await User.find({ role: "supervisor" })
+    const supervisorList = await Supervisor.find({ role: "supervisor" })
       .select("-password")
       .populate("assignedBay");
 
@@ -57,7 +57,7 @@ export const updateSupervisor = async (req, res) => {
     delete updates.password;
     delete updates.role;
 
-    const updated = await User.findByIdAndUpdate(id, updates, {
+    const updated = await Supervisor.findByIdAndUpdate(id, updates, {
       new: true,
     }).select("-password");
 
@@ -80,7 +80,7 @@ export const toggleSupervisorStatus = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const supervisor = await User.findById(id);
+    const supervisor = await Supervisor.findById(id);
     if (!supervisor) {
       return res.status(404).json({ message: "Supervisor not found" });
     }

@@ -15,7 +15,7 @@ import {
 const router = express.Router();
 
 // Admin-only
-router.post("/", protect, createStaff);
+router.post("/", createStaff);
 router.get("/", protect, getAllStaff);
 router.put("/:id", protect, updateStaff);
 router.patch("/:id/status", protect, adminOnly, toggleStaffStatus);
