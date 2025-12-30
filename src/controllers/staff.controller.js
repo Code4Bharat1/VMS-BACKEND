@@ -13,6 +13,9 @@ export const createStaff = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // 🔐 Detect who is creating staff
+    const isAdmin = req.user.role === "admin";
+
     const staff = await User.create({
       name,
       email,
@@ -20,12 +23,42 @@ export const createStaff = async (req, res) => {
       password: hashedPassword,
       role: "staff",
       assignedBay,
+      approvalStatus: isAdmin ? "approved" : "pending",
+      isActive: isAdmin ? true : false,
+
+      requestSource: isAdmin ? "admin" : "supervisor",
+      createdBy: req.user._id, // keep this for reference
     });
 
     return res.json({
       success: true,
-      message: "Staff created successfully",
+      message: isAdmin
+        ? "Staff created successfully"
+        : "Staff created and sent for admin approval",
       staff,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+// ---------------- APPROVE STAFF (ADMIN ONLY) ----------------
+export const approveStaff = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const staff = await User.findById(id);
+    if (!staff || staff.role !== "staff") {
+      return res.status(404).json({ message: "Staff not found" });
+    }
+
+    staff.approvalStatus = "approved";
+    staff.isActive = true;
+    await staff.save();
+
+    return res.json({
+      success: true,
+      message: "Staff approved successfully",
     });
   } catch (err) {
     return res.status(500).json({ message: err.message });
@@ -37,8 +70,13 @@ export const getAllStaff = async (req, res) => {
   try {
     const staffList = await User.find({ role: "staff" })
       .select("-password")
-      .populate("assignedBay");
-
+      .populate("assignedBay")
+      // .populate("createdBy", "name email")
+      .populate({
+        path: "createdBy",
+        select: "name role",
+        options: { strictPopulate: false },
+      });
     return res.json({ success: true, staff: staffList });
   } catch (err) {
     return res.status(500).json({ message: err.message });
@@ -80,6 +118,26 @@ export const toggleStaffStatus = async (req, res) => {
       success: true,
       message: "Status updated",
       isActive: staff.isActive,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+// ---------------- REJECT STAFF (ADMIN - HARD DELETE) ----------------
+export const rejectStaff = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const staff = await User.findById(id);
+    if (!staff || staff.role !== "staff") {
+      return res.status(404).json({ message: "Staff not found" });
+    }
+
+    await User.findByIdAndDelete(id);
+
+    return res.json({
+      success: true,
+      message: "Staff request rejected and removed",
     });
   } catch (err) {
     return res.status(500).json({ message: err.message });

@@ -1,5 +1,7 @@
 import express from "express";
 import {
+  rejectStaff,
+  approveStaff,
   createStaff,
   getAllStaff,
   updateStaff,
@@ -17,8 +19,13 @@ const router = express.Router();
 // Admin-only
 router.post("/", protect, createStaff);
 router.get("/", protect, getAllStaff);
-router.put("/:id", protect, updateStaff);
+router.patch("/:id/approve", protect, adminOnly, approveStaff);
+router.patch("/:id/reject", protect, adminOnly, rejectStaff);
 router.patch("/:id/status", protect, adminOnly, toggleStaffStatus);
+
+router.patch("/:id", protect, adminOnly, updateStaff);
+
+
 
 // Supervisor-only
 router.post("/assign-staff", protect, supervisorOnly, assignStaffToBay);

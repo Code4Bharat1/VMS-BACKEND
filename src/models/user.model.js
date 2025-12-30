@@ -29,6 +29,26 @@ const userSchema = new mongoose.Schema(
       enum: ["admin", "staff", "supervisor"],
       default: "staff",
     },
+    approvalStatus: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "approved",
+    },
+
+    rejectionReason: {
+      type: String,
+      default: "",
+    },
+
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    requestSource: {
+      type: String,
+      enum: ["admin", "supervisor"],
+      default: "admin",
+    },
 
     isActive: { type: Boolean, default: true },
   },
