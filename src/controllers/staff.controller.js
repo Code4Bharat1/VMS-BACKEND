@@ -1,5 +1,6 @@
 import { User } from "../models/user.model.js";
 import bcrypt from "bcryptjs";
+import { logActivity } from "../utils/ActivityLog.js";
 
 // ---------------- CREATE STAFF ----------------
 export const createStaff = async (req, res) => {
@@ -29,6 +30,15 @@ export const createStaff = async (req, res) => {
       requestSource: isAdmin ? "admin" : "supervisor",
       createdBy: req.user._id, // keep this for reference
     });
+    
+    const admin = isAdmin ? "Admin" : "Supervisor"
+
+    await logActivity({
+      req,
+      action: "Staff Created",
+      module: "STAFF",
+      description: `${admin} created staff ${staff.name}`,
+    });
 
     return res.json({
       success: true,
@@ -37,6 +47,8 @@ export const createStaff = async (req, res) => {
         : "Staff created and sent for admin approval",
       staff,
     });
+
+    
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }

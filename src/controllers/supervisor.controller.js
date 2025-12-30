@@ -1,5 +1,6 @@
 import { User } from "../models/user.model.js";
 import bcrypt from "bcryptjs";
+import { logActivity } from "../utils/ActivityLog.js";
 
 // ---------------- CREATE SUPERVISOR ----------------
 export const createSupervisor = async (req, res) => {
@@ -20,6 +21,14 @@ export const createSupervisor = async (req, res) => {
       password: hashedPassword,
       role: "supervisor",
       assignedBay,
+    });
+
+
+    await logActivity({
+      req,
+      action: "Supervisor Created",
+      module: "AUTH",
+      description: ` created staff ${supervisor.name}`,
     });
 
     return res.json({

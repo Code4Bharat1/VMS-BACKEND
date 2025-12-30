@@ -11,6 +11,7 @@ import vendorRoutes from "./src/routes/vendor.routes.js";
 import bayRoutes from "./src/routes/bay.routes.js";
 import entryRoutes from "./src/routes/entry.routes.js";
 import ocrRoutes from "./src/routes/ocr.routes.js";
+import logs from "./src/routes/logs.routes.js"
 import rateLimit from "express-rate-limit";
 
 const limiter = rateLimit({
@@ -67,7 +68,7 @@ app.use("/api/v1/vendors", vendorRoutes);
 app.use("/api/v1/bays", bayRoutes);
 app.use("/api/v1/entries", entryRoutes);
 app.use("/api/v1/ocr", ocrRoutes);
-
+app.use("/api/v1/logs",logs)
 
 // --------------------- Error Handler --------------------- //
 app.use((err, req, res, next) => {
