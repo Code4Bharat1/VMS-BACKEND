@@ -4,6 +4,7 @@ import {
   getAllSupervisors,
   updateSupervisor,
   toggleSupervisorStatus,
+  deleteSupervisor
 } from "../controllers/supervisor.controller.js";
 
 import { protect, adminOnly } from "../middleware/auth.middleware.js";
@@ -15,5 +16,7 @@ router.post("/", protect, adminOnly, createSupervisor);
 router.get("/", protect, adminOnly, getAllSupervisors);
 router.put("/:id", protect, adminOnly, updateSupervisor);
 router.patch("/:id/status", protect, adminOnly, toggleSupervisorStatus);
+router.delete("/:id", protect, adminOnly, deleteSupervisor);
+
 
 export default router;

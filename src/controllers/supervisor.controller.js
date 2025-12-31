@@ -106,3 +106,42 @@ export const toggleSupervisorStatus = async (req, res) => {
     return res.status(500).json({ message: err.message });
   }
 };
+// ---------------- DELETE SUPERVISOR (ADMIN ONLY) ----------------
+export const deleteSupervisor = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const supervisor = await User.findById(id);
+    if (!supervisor || supervisor.role !== "supervisor") {
+      return res.status(404).json({ message: "Supervisor not found" });
+    }
+
+    // Optional safety check
+    const staffCount = await User.countDocuments({
+      role: "staff",
+      assignedBay: supervisor.assignedBay,
+    });
+
+    if (staffCount > 0) {
+      return res.status(400).json({
+        message: "Cannot delete supervisor with assigned staff",
+      });
+    }
+
+    await User.findByIdAndDelete(id);
+
+    await logActivity({
+      req,
+      action: "Supervisor Deleted",
+      module: "SUPERVISOR",
+      description: `Supervisor ${supervisor.name} deleted`,
+    });
+
+    return res.json({
+      success: true,
+      message: "Supervisor deleted successfully",
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
