@@ -32,6 +32,7 @@ const allowedOrigins = [
   "http://localhost:3000",
   "https://vms.nexcorealliance.com",
   "https://www.vms.nexcorealliance.com",
+  "https://256bf70g-3000.inc1.devtunnels.ms",
 ];
 
 app.use(

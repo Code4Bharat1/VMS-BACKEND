@@ -17,11 +17,11 @@ import {
 const router = express.Router();
 
 // Admin-only
-router.post("/", protect, createStaff);
-router.get("/", protect, getAllStaff);
-router.patch("/:id/approve", protect, adminOnly, approveStaff);
-router.patch("/:id/reject", protect, adminOnly, rejectStaff);
-router.patch("/:id/status", protect, adminOnly, toggleStaffStatus);
+router.post("/", createStaff);
+router.get("/", getAllStaff);
+router.patch("/:id/approve", adminOnly, approveStaff);
+router.patch("/:id/reject", adminOnly, rejectStaff);
+router.patch("/:id/status", adminOnly, toggleStaffStatus);
 
 router.patch("/:id", protect, adminOnly, updateStaff);
 
