@@ -6,14 +6,14 @@ export const scanOCR = async (req, res) => {
     const { imageBase64, imageUrl } = req.body;
 
     /* ---------------- VALIDATION ---------------- */
-    if (!imageBase64 || !imageUrl) {
+    if (!imageBase64 && !imageUrl) {
       return res.status(400).json({
         success: false,
         message: "imageBase64 or imageUrl is required",
       });
     }
 
-    // Prevent huge uploads (extra safety)
+    // Prevent very large base64 payloads
     if (imageBase64 && imageBase64.length > 8_000_000) {
       return res.status(413).json({
         success: false,
@@ -26,7 +26,7 @@ export const scanOCR = async (req, res) => {
     formData.append("apikey", process.env.OCR_SPACE_API_KEY);
     formData.append("language", "eng");
 
-    // OCR.space reliability settings
+    // OCR.space stability & accuracy
     formData.append("filetype", "JPG");
     formData.append("OCREngine", "2");
     formData.append("scale", "true");
@@ -37,6 +37,7 @@ export const scanOCR = async (req, res) => {
     } else {
       let dataUri = imageBase64.trim();
 
+      // Ensure valid data URI
       if (!dataUri.startsWith("data:")) {
         dataUri = `data:image/jpeg;base64,${dataUri}`;
       }
@@ -63,7 +64,10 @@ export const scanOCR = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "OCR failed",
-        error: result.ErrorMessage || result.ErrorDetails || "Unknown OCR error",
+        error:
+          result.ErrorMessage ||
+          result.ErrorDetails ||
+          "Unknown OCR error",
       });
     }
 
@@ -71,25 +75,34 @@ export const scanOCR = async (req, res) => {
     const rawText = result?.ParsedResults?.[0]?.ParsedText || "";
 
     /* ---------------- VEHICLE NUMBER EXTRACTION ---------------- */
-    const cleanText = rawText
-      .replace(/\s+/g, "")
-      .replace(/\n/g, "")
-      .toUpperCase();
 
-    // Normalize OCR mistakes
-    const normalizedText = cleanText
+    // Step 1: normalize OCR text
+    let normalizedText = rawText
+      .replace(/\n/g, " ")
+      .replace(/\s+/g, "")
+      .toUpperCase()
       .replace(/O/g, "0")
       .replace(/I/g, "1")
       .replace(/Z/g, "2")
       .replace(/S/g, "5")
       .replace(/B/g, "8");
 
-    // Indian vehicle plate regex (flexible)
-    const plateRegex =
-      /[A-Z]{2}[0-9]{1,2}[A-Z]{1,2}[0-9]{3,4}/g;
+    // Step 2: loose Indian plate regex (OCR-friendly)
+    const loosePlateRegex =
+      /[A-Z]{2,3}[0-9]{1,2}[A-Z]{1,2}[0-9]{3,4}/g;
 
-    const match = normalizedText.match(plateRegex);
-    const vehicleNumber = match ? match[0] : null;
+    let match = normalizedText.match(loosePlateRegex);
+    let vehicleNumber = match ? match[0] : null;
+
+    // Step 3: auto-correct common OCR state mistakes
+    if (vehicleNumber) {
+      vehicleNumber = vehicleNumber
+        .replace(/^TH/, "TN") // TH → TN
+        .replace(/^TL/, "KL") // TL → KL
+        .replace(/^TM/, "MH") // TM → MH
+        .replace(/^TN0/, "TN0") // safety
+        .replace(/^MH0/, "MH0");
+    }
 
     /* ---------------- RESPONSE ---------------- */
     return res.json({
@@ -97,7 +110,6 @@ export const scanOCR = async (req, res) => {
       rawText,
       vehicleNumber,
     });
-
   } catch (error) {
     console.error(
       "OCR Error:",

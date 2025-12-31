@@ -4,6 +4,6 @@ import { protect } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-router.post("/scan", protect, scanOCR);
+router.post("/scan", scanOCR);
 
 export default router;
