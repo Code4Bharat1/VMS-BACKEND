@@ -6,13 +6,14 @@ import { connectDB } from "./src/config/db.js";
 // Routes
 import authRoutes from "./src/routes/auth.routes.js";
 import staffRoutes from "./src/routes/staff.routes.js";
-import supervisorRoutes from "./src/routes/supervisor.routes.js"; 
+import supervisorRoutes from "./src/routes/supervisor.routes.js";
 import vendorRoutes from "./src/routes/vendor.routes.js";
 import bayRoutes from "./src/routes/bay.routes.js";
 import entryRoutes from "./src/routes/entry.routes.js";
 import ocrRoutes from "./src/routes/ocr.routes.js";
-import logs from "./src/routes/logs.routes.js"
+import logs from "./src/routes/logs.routes.js";
 import rateLimit from "express-rate-limit";
+import cookieParser from "cookie-parser";
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -32,7 +33,6 @@ const allowedOrigins = [
   "http://localhost:3000",
   "https://vms.nexcorealliance.com",
   "https://www.vms.nexcorealliance.com",
-
 ];
 
 app.use(
@@ -52,6 +52,7 @@ app.use(
 );
 
 app.use(express.json());
+app.use(cookieParser());
 
 // Rate Limiter
 app.use("/api", limiter);
@@ -69,7 +70,7 @@ app.use("/api/v1/vendors", vendorRoutes);
 app.use("/api/v1/bays", bayRoutes);
 app.use("/api/v1/entries", entryRoutes);
 app.use("/api/v1/ocr", ocrRoutes);
-app.use("/api/v1/logs",logs)
+app.use("/api/v1/logs", logs);
 
 // --------------------- Error Handler --------------------- //
 app.use((err, req, res, next) => {

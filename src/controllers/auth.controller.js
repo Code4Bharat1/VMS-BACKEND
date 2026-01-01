@@ -1,9 +1,9 @@
-// import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
+import { generateAccessToken, generateRefreshToken } from "../utils/token.js";
 
-// ---------------- REGISTER ADMIN ---------------- //
+/* ---------------- REGISTER ADMIN ---------------- */
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -33,17 +33,15 @@ export const registerUser = async (req, res) => {
   }
 };
 
-// ---------------- LOGIN ---------------- //
+/* ---------------- LOGIN ---------------- */
 export const loginUser = async (req, res) => {
   try {
     let { email, password } = req.body;
     email = email.toLowerCase().trim();
 
-    // const user = await User.findOne({ email });
     const user = await User.findOne({ email })
-  .populate("managedBays", "_id bayName")
-  .populate("assignedBay", "_id bayName");
-
+      .populate("managedBays", "_id bayName")
+      .populate("assignedBay", "_id bayName");
 
     if (!user) {
       return res.status(400).json({ message: "User not found" });
@@ -58,15 +56,27 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Invalid password" });
     }
 
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+
+    console.log(refreshToken);
+    console.log(accessToken);
+
+    // Save refresh token in DB
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    // ✅ SET REFRESH TOKEN IN HTTP-ONLY COOKIE
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     return res.json({
       message: "Login successful",
-      token,
+      accessToken,
       user,
     });
   } catch (error) {
@@ -74,7 +84,62 @@ export const loginUser = async (req, res) => {
   }
 };
 
-// ---------------- CREATE SUPERVISOR ---------------- //
+/* ---------------- REFRESH TOKEN ---------------- */
+export const refreshAccessToken = async (req, res) => {
+  try {
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({ message: "Refresh token missing" });
+    }
+
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET);
+
+    const user = await User.findById(decoded.id);
+
+    if (!user || user.refreshToken !== refreshToken) {
+      return res.status(403).json({ message: "Invalid refresh token" });
+    }
+
+    const newAccessToken = generateAccessToken(user);
+
+    return res.json({
+      accessToken: newAccessToken,
+    });
+  } catch (error) {
+    return res
+      .status(403)
+      .json({ message: "Invalid or expired refresh token" });
+  }
+};
+
+/* ---------------- LOGOUT ---------------- */
+export const logoutUser = async (req, res) => {
+  try {
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (refreshToken) {
+      const user = await User.findOne({ refreshToken });
+      if (user) {
+        user.refreshToken = null;
+        await user.save();
+      }
+    }
+
+    // ✅ CLEAR COOKIE
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      sameSite: "strict",
+      path: "/api/v1/auth/refresh",
+    });
+
+    return res.json({ message: "Logged out successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+/* ---------------- CREATE SUPERVISOR ---------------- */
 export const createSupervisor = async (req, res) => {
   try {
     const { name, email, password, managedBays } = req.body;
@@ -111,7 +176,7 @@ export const createSupervisor = async (req, res) => {
   }
 };
 
-// ---------------- CREATE STAFF ---------------- //
+/* ---------------- CREATE STAFF ---------------- */
 export const createStaff = async (req, res) => {
   try {
     const { name, email, password, assignedBay } = req.body;
