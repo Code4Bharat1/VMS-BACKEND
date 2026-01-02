@@ -1,6 +1,7 @@
 import express from "express";
 import {
   rejectStaff,
+  deleteStaff,
   approveStaff,
   createStaff,
   getAllStaff,
@@ -22,8 +23,9 @@ router.get("/", protect, getAllStaff);
 router.patch("/:id/approve", protect, adminOnly, approveStaff);
 router.patch("/:id/reject", protect, adminOnly, rejectStaff);
 router.patch("/:id/status", protect, adminOnly, toggleStaffStatus);
+router.delete("/:id", protect, adminOnly, deleteStaff);
 
-router.patch("/:id", protect, adminOnly, updateStaff);
+router.put("/:id", protect, adminOnly, updateStaff);
 
 
 

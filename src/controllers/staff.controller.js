@@ -135,6 +135,40 @@ export const toggleStaffStatus = async (req, res) => {
     return res.status(500).json({ message: err.message });
   }
 };
+// ---------------- DELETE STAFF (ADMIN ONLY) ----------------
+export const deleteStaff = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1️⃣ Find staff user
+    const staff = await User.findById(id);
+
+    // 2️⃣ Validate existence and role
+    if (!staff || staff.role !== "staff") {
+      return res.status(404).json({ message: "Staff not found" });
+    }
+
+    // 3️⃣ Delete staff
+    await User.findByIdAndDelete(id);
+
+    // 4️⃣ Log activity
+    await logActivity({
+      req,
+      action: "Staff Deleted",
+      module: "STAFF",
+      description: `Admin deleted staff ${staff.name}`,
+    });
+
+    // 5️⃣ Send response
+    return res.json({
+      success: true,
+      message: "Staff deleted successfully",
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
 // ---------------- REJECT STAFF (ADMIN - HARD DELETE) ----------------
 export const rejectStaff = async (req, res) => {
   try {
