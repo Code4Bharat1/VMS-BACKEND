@@ -5,7 +5,7 @@ export const createVendor = async (req, res) => {
   try {
     const { companyName, contactPerson, mobile, shopId, floorNo, crNo  } = req.body;
 
-    const exists = await Vendor.findOne({ mobile });
+    const exists = await Vendor.findOne({ mobile : mobile , shopId : shopId });
     if (exists) {
       return res.status(400).json({ message: "Vendor already exists" });
     }
