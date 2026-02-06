@@ -145,3 +145,35 @@ export const deleteSupervisor = async (req, res) => {
     return res.status(500).json({ message: err.message });
   }
 };
+export const updateMyProfile = async (req, res) => {
+  try {
+    // 🔑 handle all auth middleware styles
+    const supervisorId = req.user._id || req.user.id || req.user;
+
+    if (!supervisorId) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    const { name, email, phone } = req.body;
+
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: supervisorId, role: "supervisor" }, // 👈 IMPORTANT
+      { name, email, phone },
+      { new: true }
+    )
+      .select("-password")
+      .populate("assignedBay");
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "Supervisor not found" });
+    }
+
+    return res.json({
+      success: true,
+      user: updatedUser,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+

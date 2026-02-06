@@ -14,6 +14,12 @@ const entrySchema = new mongoose.Schema(
     vehicleNumber: { type: String, required: true },
     vehicleType: { type: String, default: "truck" },
 
+    // Purpose of visit (manual entry)
+    purpose: {
+      type: String,
+      trim: true,
+    },
+
     // Vendor Reference
     vendorId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -34,11 +40,11 @@ const entrySchema = new mongoose.Schema(
     outTime: { type: Date, default: null },
 
     // Entry Method: Manual / OCR / QR
-    // entryMethod: {
-    //   type: String,
-    //   enum: ["manual", "ocr", "qr"],
-    //   default: "manual",
-    // },
+    entryMethod: {
+      type: String,
+      enum: ["manual", "ocr", "qr"],
+      default: "manual",
+    },
 
     // Created by (Staff)
     createdBy: {
@@ -46,6 +52,10 @@ const entrySchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    processingTimeMs: {
+  type: Number, // milliseconds
+},
+
   },
   { timestamps: true }
 );

@@ -25,7 +25,7 @@ router.patch("/:id/reject", protect, adminOnly, rejectStaff);
 router.patch("/:id/status", protect, adminOnly, toggleStaffStatus);
 router.delete("/:id", protect, adminOnly, deleteStaff);
 
-router.put("/:id", protect, adminOnly, updateStaff);
+router.put("/:id", updateStaff);
 
 
 
