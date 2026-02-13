@@ -1,9 +1,9 @@
 import express from "express";
-import { scanOCR } from "../controllers/ocr.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
+import { scanPlateOCR } from "../controllers/ocr.controller.js";
 
 const router = express.Router();
 
-router.post("/scan", scanOCR);
+router.post("/scan", scanPlateOCR);
 
 export default router;
