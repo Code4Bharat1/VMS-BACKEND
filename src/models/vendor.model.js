@@ -9,7 +9,15 @@ const vendorSchema = new mongoose.Schema(
     mobile: { type: String, required: true },
 
     shopId: { type: String, required:true},
-    
+
+    Category: {
+  type: String,
+  required: true,
+  trim: true,
+  lowercase: true,
+},
+
+
     floorNo: { type: String, required:true },
 
     crNo: { type: String, required: true},

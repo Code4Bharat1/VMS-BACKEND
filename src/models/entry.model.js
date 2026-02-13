@@ -13,7 +13,7 @@ const entrySchema = new mongoose.Schema(
     // Vehicle Information
     vehicleNumber: { type: String, required: true },
     vehicleType: { type: String, default: "truck" },
-
+tenantName: { type: String }, // Add this field
     // Purpose of visit (manual entry)
     purpose: {
       type: String,

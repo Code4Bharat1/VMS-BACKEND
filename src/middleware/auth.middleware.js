@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
+import { User } from "../models/user.model.js";
 
-export const protect = (req, res, next) => {
+export const protect = async (req, res, next) => {
   try {
     let token = req.headers.authorization;
 
@@ -12,13 +13,24 @@ export const protect = (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    req.user = decoded; // { id, role, iat, exp }
+    const user = await User.findById(decoded.id).select(
+      "_id name role assignedBay managedBays"
+    );
+
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    req.user = user;
+    req.user.id = user._id.toString(); // ✅ SAFE ADDITION
 
     next();
   } catch (err) {
     return res.status(401).json({ message: "Invalid token" });
   }
 };
+
+
 
 export const adminOnly = (req, res, next) => {
   if (req.user.role !== "admin") {

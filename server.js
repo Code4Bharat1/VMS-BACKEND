@@ -71,7 +71,7 @@ app.use("/api/v1/bays", bayRoutes);
 app.use("/api/v1/entries", entryRoutes);
 app.use("/api/v1/ocr", ocrRoutes);
 app.use("/api/v1/logs", logs);
-app.use("/supervisors", supervisorRoutes);
+// app.use("/supervisors", supervisorRoutes);
 
 // --------------------- Error Handler --------------------- //
 app.use((err, req, res, next) => {

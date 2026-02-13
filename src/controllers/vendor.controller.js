@@ -3,9 +3,16 @@ import { Vendor } from "../models/vendor.model.js";
 // ---------------- CREATE VENDOR ----------------
 export const createVendor = async (req, res) => {
   try {
-    const { companyName, contactPerson, mobile, shopId, floorNo, crNo  } = req.body;
+    let { companyName, contactPerson, mobile, shopId, Category, floorNo, crNo } = req.body;
 
-    const exists = await Vendor.findOne({ mobile : mobile , shopId : shopId });
+    // Normalize category manually (extra safety)
+    Category = Category.trim().toLowerCase();
+
+    const exists = await Vendor.findOne({
+      mobile,
+      shopId,
+    });
+
     if (exists) {
       return res.status(400).json({ message: "Vendor already exists" });
     }
@@ -15,6 +22,7 @@ export const createVendor = async (req, res) => {
       contactPerson,
       mobile,
       shopId,
+      Category,
       floorNo,
       crNo,
     });
@@ -24,6 +32,20 @@ export const createVendor = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+// ---------------- GET UNIQUE CATEGORIES ----------------
+export const getVendorCategories = async (req, res) => {
+  try {
+    const categories = await Vendor.distinct("Category");
+
+    res.json({
+      success: true,
+      categories: categories.sort(),
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 
 // ---------------- GET ALL VENDORS ----------------
 export const getVendors = async (req, res) => {
@@ -38,6 +60,7 @@ export const getVendors = async (req, res) => {
         { contactPerson: { $regex: search, $options: "i" } },
         { mobile: { $regex: search, $options: "i" } },
         { shopId: { $regex: search, $options: "i" } },
+        { Category: { $regex: search, $options: "i" } },
         { floorNo: { $regex: search, $options: "i" } },
         { crNo: { $regex: search, $options: "i" } },
       ];

@@ -2,22 +2,21 @@ import { Entry } from "../models/entry.model.js";
 import mongoose from "mongoose";
 
 export const manualEntry = async (req, res) => {
-  
   const startTime = Date.now();
   try {
     const {
-  visitorName,
-  visitorMobile,
-  visitorCompany,
-  qidNumber,
-  vehicleNumber,
-  vehicleType,
-  purpose,
-  bayId,
-  vendorId,      // ✅ ADD THIS
-  createdBy,
-} = req.body;
-
+      visitorName,
+      visitorMobile,
+      visitorCompany,
+      tenantName, // ✅ ADDED
+      qidNumber,
+      vehicleNumber,
+      vehicleType,
+      purpose,
+      bayId,
+      vendorId,
+      createdBy,
+    } = req.body;
 
     if (!vehicleNumber || !bayId || !createdBy) {
       return res
@@ -35,11 +34,11 @@ export const manualEntry = async (req, res) => {
 
     console.log("REQ BODY:", req.body);
 
-
     const entry = await Entry.create({
       visitorName,
       visitorMobile,
       visitorCompany,
+      tenantName, // ✅ ADDED
       qidNumber,
       vehicleNumber: vehicleNumber.toUpperCase(),
       vehicleType,
@@ -48,7 +47,6 @@ export const manualEntry = async (req, res) => {
       vendorId,
       entryMethod: "manual",
       processingTimeMs: Date.now() - startTime,
-
       createdBy, // required by schema
     });
 
@@ -125,9 +123,8 @@ export const getAllEntries = async (req, res) => {
   try {
     const entries = await Entry.find()
       .populate("vendorId", "companyName")
-.populate("bayId", "bayName")
-.populate("createdBy", "name role")
-
+      .populate("bayId", "bayName")
+      .populate("createdBy", "name role")
       .populate("assignedBay")
       .sort({ createdAt: -1 });
 

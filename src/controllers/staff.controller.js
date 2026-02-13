@@ -31,14 +31,16 @@ export const createStaff = async (req, res) => {
       createdBy: req.user._id, // keep this for reference
     });
     
-    const admin = isAdmin ? "Admin" : "Supervisor"
+   const creatorName = req.user.name;
+const creatorRole =
+  req.user.role === "admin" ? "Admin" : "Supervisor";
 
-    await logActivity({
-      req,
-      action: "Staff Created",
-      module: "STAFF",
-      description: `${admin} created staff ${staff.name}`,
-    });
+await logActivity({
+  req,
+  action: "Staff Created",
+  module: "STAFF",
+  description: `${creatorRole} ${creatorName} created staff ${staff.name}`,
+});
 
     return res.json({
       success: true,
@@ -80,20 +82,37 @@ export const approveStaff = async (req, res) => {
 // ---------------- GET ALL STAFF ----------------
 export const getAllStaff = async (req, res) => {
   try {
-    const staffList = await User.find({ role: "staff" })
-      .select("-password")
-      .populate("assignedBay")
-      // .populate("createdBy", "name email")
-      .populate({
-        path: "createdBy",
-        select: "name role",
-        options: { strictPopulate: false },
-      });
-    return res.json({ success: true, staff: staffList });
+    // ADMIN → see all staff
+    if (req.user.role === "admin") {
+      const staffList = await User.find({ role: "staff" })
+        .select("-password")
+        .populate("assignedBay", "bayName")
+        .populate("createdBy", "name role");
+
+      return res.json({ success: true, staff: staffList });
+    }
+
+    // SUPERVISOR → see staff in ALL managed bays
+    if (req.user.role === "supervisor") {
+      const supervisor = await User.findById(req.user._id).select("managedBays");
+
+      const staffList = await User.find({
+        role: "staff",
+        assignedBay: { $in: supervisor.managedBays },
+      })
+        .select("-password")
+        .populate("assignedBay", "bayName")
+        .populate("createdBy", "name role");
+
+      return res.json({ success: true, staff: staffList });
+    }
+
+    return res.status(403).json({ message: "Unauthorized" });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
 };
+
 
 // ---------------- UPDATE STAFF ----------------
 export const updateStaff = async (req, res) => {
@@ -116,15 +135,49 @@ export const updateStaff = async (req, res) => {
 };
 
 // ---------------- TOGGLE ACTIVE/INACTIVE ----------------
+// ---------------- TOGGLE ACTIVE/INACTIVE ----------------
 export const toggleStaffStatus = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user._id || req.user.id;
 
     const staff = await User.findById(id);
     if (!staff) return res.status(404).json({ message: "Staff not found" });
 
+    // If user is supervisor, verify staff is in their bay
+    if (req.user.role === "supervisor") {
+  const supervisor = await User.findById(userId).select("managedBays");
+
+  const staffBayId =
+    typeof staff.assignedBay === "string"
+      ? staff.assignedBay
+      : staff.assignedBay._id;
+
+  const allowed = supervisor.managedBays.some(
+    (b) => String(b) === String(staffBayId)
+  );
+
+  if (!allowed) {
+    return res.status(403).json({ message: "Staff not in your bays" });
+  }
+
+  if (staff.approvalStatus !== "approved") {
+    return res.status(403).json({ message: "Cannot toggle pending staff" });
+  }
+}
+
+
     staff.isActive = !staff.isActive;
     await staff.save();
+
+    await logActivity({
+      req,
+      action: "Staff Status Toggled",
+      module: "STAFF",
+      description: `${req.user.role === "admin" ? "Admin" : "Supervisor"} ${
+        staff.isActive ? "activated" : "deactivated"
+      } staff ${staff.name}`,
+    });
 
     return res.json({
       success: true,
@@ -169,26 +222,40 @@ export const deleteStaff = async (req, res) => {
   }
 };
 
-// ---------------- REJECT STAFF (ADMIN - HARD DELETE) ----------------
+// ---------------- REJECT STAFF (ADMIN - SOFT REJECT) ----------------
 export const rejectStaff = async (req, res) => {
   try {
     const { id } = req.params;
+    const { reason } = req.body;
 
     const staff = await User.findById(id);
     if (!staff || staff.role !== "staff") {
       return res.status(404).json({ message: "Staff not found" });
     }
 
-    await User.findByIdAndDelete(id);
+    staff.approvalStatus = "rejected";
+    staff.isActive = false;
+    staff.rejectionReason = reason || "No reason provided";
+
+    await staff.save();
+
+    await logActivity({
+      req,
+      action: "Staff Rejected",
+      module: "STAFF",
+      description: `Admin rejected staff ${staff.name}. Reason: ${staff.rejectionReason}`,
+    });
 
     return res.json({
       success: true,
-      message: "Staff request rejected and removed",
+      message: "Staff rejected successfully",
+      staff,
     });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
 };
+
 
 // ---------------- SUPERVISOR ASSIGNS STAFF TO BAY ----------------
 export const assignStaffToBay = async (req, res) => {

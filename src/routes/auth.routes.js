@@ -6,6 +6,8 @@ import {
   logoutUser,
   refreshAccessToken,
   registerUser,
+  updatePassword,
+  updateProfile,
 } from "../controllers/auth.controller.js";
 import { protect, adminOnly } from "../middleware/auth.middleware.js";
 
@@ -20,5 +22,12 @@ router.post("/logout", logoutUser);
 router.post("/register", protect, adminOnly, registerUser);
 router.post("/supervisor", protect, adminOnly, createSupervisor);
 router.post("/staff", protect, adminOnly, createStaff);
+router.put("/users/update-password", protect, updatePassword);
+router.put(
+  "/users/profile",
+  protect,
+  updateProfile
+);
+
 
 export default router;

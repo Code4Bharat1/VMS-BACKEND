@@ -1,3 +1,4 @@
+//auth controller
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
@@ -208,3 +209,70 @@ export const createStaff = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
+/* ---------------- UPDATE PASSWORD ---------------- */
+export const updatePassword = async (req, res) => {
+  try {
+    const userId = req.user.id; // from auth middleware
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    user.password = hashedPassword;
+    await user.save();
+
+    return res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+/* ---------------- UPDATE PROFILE ---------------- */
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, email, phone } = req.body; // ✅ include phone
+
+    if (!name || !email || !phone) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const emailExists = await User.findOne({
+      email: normalizedEmail,
+      _id: { $ne: userId },
+    });
+
+    if (emailExists) {
+      return res.status(400).json({ message: "Email already in use" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { name, email: normalizedEmail, phone }, // ✅ SAVE phone
+      { new: true }
+    );
+
+    return res.json({
+      message: "Profile updated successfully",
+      user,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
