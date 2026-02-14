@@ -56,19 +56,13 @@ export const scanPlateOCR = async (req, res) => {
     }
 
     const savedPlate = await Plate.create({
-      plate: result.plate.toUpperCase(),
-      score: result.score,
-      vehicle: result.vehicle || {},
-      direction: result.direction,
-      region: result.region?.code || null,
-      box: result.box || null,
+      plate: result.plate.toUpperCase()
     });
 
     return res.status(200).json({
       success: true,
       plate: savedPlate.plate,
-      score: savedPlate.score,
-      _id: savedPlate._id,
+      
     });
   } catch (error) {
     console.error(
