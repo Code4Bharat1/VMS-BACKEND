@@ -22,10 +22,7 @@ export const logActivity = async ({
       userAgent: req.headers["user-agent"],
       meta,
     });
-    if(res){
-        console.log("Activiti log created:", res);
-        
-    }
+    
   } catch (err) {
     console.error("Activity log failed:", err.message);
   }

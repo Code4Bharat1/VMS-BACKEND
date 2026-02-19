@@ -3,6 +3,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/token.js";
+import { verifyCaptcha } from "../utils/captcha.js";
+
+const loginAttempts = new Map();
+
 
 /* ---------------- REGISTER ADMIN ---------------- */
 export const registerUser = async (req, res) => {
@@ -37,34 +41,86 @@ export const registerUser = async (req, res) => {
 /* ---------------- LOGIN ---------------- */
 export const loginUser = async (req, res) => {
   try {
-    let { email, password } = req.body;
+    let { email, password, captchaId, captchaValue } = req.body;
     email = email.toLowerCase().trim();
+    const ip = req.ip;
 
+    /* =========================
+       COUNT ATTEMPTS
+       ========================= */
+    const attempts = (loginAttempts.get(ip) || 0) + 1;
+    loginAttempts.set(ip, attempts);
+
+    setTimeout(() => loginAttempts.delete(ip), 15 * 60 * 1000);
+
+    
+
+    /* =========================
+       USER LOOKUP
+       ========================= */
     const user = await User.findOne({ email })
       .populate("managedBays", "_id bayName")
       .populate("assignedBay", "_id bayName");
 
+    /* =========================
+       INVALID EMAIL
+       ========================= */
     if (!user) {
-      return res.status(400).json({ message: "User not found" });
+      return res.status(400).json({
+        message: "Email not found",
+        requireCaptcha: attempts >= 3,
+      });
     }
 
     if (!user.isActive) {
-      return res.status(403).json({ message: "User is inactive" });
+      return res.status(403).json({
+        message: "User is inactive",
+        requireCaptcha: attempts >= 3,
+      });
     }
 
+    /* =========================
+       INVALID PASSWORD
+       ========================= */
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid password" });
+      return res.status(400).json({
+        message: "Invalid password",
+        requireCaptcha: attempts >= 3,
+      });
     }
+
+    /* =========================
+       CAPTCHA ENFORCEMENT (AFTER CHECKS)
+       ========================= */
+    if (attempts >= 3) {
+      if (!captchaId || !captchaValue) {
+        return res.status(400).json({
+          message: "Captcha required",
+          requireCaptcha: true,
+        });
+      }
+
+      const isCaptchaValid = verifyCaptcha(captchaId, captchaValue);
+      if (!isCaptchaValid) {
+        return res.status(400).json({
+          message: "Invalid captcha",
+          requireCaptcha: true,
+        });
+      }
+    }
+
+    /* =========================
+       SUCCESS
+       ========================= */
+    loginAttempts.delete(ip);
 
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    // Save refresh token in DB
     user.refreshToken = refreshToken;
     await user.save();
 
-    // ✅ SET REFRESH TOKEN IN HTTP-ONLY COOKIE
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -81,6 +137,7 @@ export const loginUser = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
+
 
 /* ---------------- REFRESH TOKEN ---------------- */
 export const refreshAccessToken = async (req, res) => {

@@ -2,7 +2,6 @@ import { Entry } from "../models/entry.model.js";
 import mongoose from "mongoose";
 
 export const manualEntry = async (req, res) => {
-  const startTime = Date.now();
   try {
     const {
       visitorName,
@@ -16,6 +15,7 @@ export const manualEntry = async (req, res) => {
       bayId,
       vendorId,
       createdBy,
+      processingTimeMs,
     } = req.body;
 
     if (!vehicleNumber || !bayId || !createdBy) {
@@ -32,7 +32,6 @@ export const manualEntry = async (req, res) => {
       return res.status(400).json({ message: "Invalid createdBy" });
     }
 
-    console.log("REQ BODY:", req.body);
 
     const entry = await Entry.create({
       visitorName,
@@ -46,7 +45,7 @@ export const manualEntry = async (req, res) => {
       bayId,
       vendorId,
       entryMethod: "manual",
-      processingTimeMs: Date.now() - startTime,
+      processingTimeMs: processingTimeMs || 0,
       createdBy, // required by schema
     });
 

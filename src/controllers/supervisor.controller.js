@@ -1,5 +1,5 @@
 import { User } from "../models/user.model.js";
-import { Entry } from "../models/entry.model.js";  // 👈 ADD THIS LINE
+import { Entry } from "../models/entry.model.js";
 import bcrypt from "bcryptjs";
 import { logActivity } from "../utils/ActivityLog.js";
 
@@ -27,14 +27,14 @@ export const createSupervisor = async (req, res) => {
       phone,
       password: hashedPassword,
       role: "supervisor",
-      managedBays, // ✅ MULTI-BAY
+      managedBays,
     });
 
     await logActivity({
       req,
       action: "Supervisor Created",
       module: "SUPERVISOR",
-      description: `Supervisor ${supervisor.name} created`,
+      description: `${supervisor.name} was created by ${req.user.name}`,
     });
 
     return res.json({
@@ -52,7 +52,7 @@ export const getAllSupervisors = async (req, res) => {
   try {
     const supervisors = await User.find({ role: "supervisor" })
       .select("-password")
-      .populate("managedBays", "bayName"); // ✅ FIX
+      .populate("managedBays", "bayName");
 
     return res.json({
       success: true,
@@ -71,7 +71,7 @@ export const updateSupervisor = async (req, res) => {
 
     const updated = await User.findByIdAndUpdate(
       id,
-      { name, email, phone, managedBays }, // ✅ SAFE UPDATE
+      { name, email, phone, managedBays },
       { new: true }
     )
       .select("-password")
@@ -80,6 +80,13 @@ export const updateSupervisor = async (req, res) => {
     if (!updated) {
       return res.status(404).json({ message: "Supervisor not found" });
     }
+
+    await logActivity({
+      req,
+      action: "Supervisor Updated",
+      module: "SUPERVISOR",
+      description: `${updated.name} was updated by ${req.user.name}`,
+    });
 
     return res.json({
       success: true,
@@ -96,13 +103,28 @@ export const toggleSupervisorStatus = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const supervisor = await User.findById(id);
-    if (!supervisor) {
-      return res.status(404).json({ message: "Supervisor not found" });
-    }
+   const supervisor = await User.findOne({
+  _id: id,
+  role: "supervisor",
+});
+
+if (!supervisor) {
+  return res.status(404).json({
+    success: false,
+    message: "Supervisor not found",
+  });
+}
+
 
     supervisor.isActive = !supervisor.isActive;
     await supervisor.save();
+
+    await logActivity({
+      req,
+      action: "Supervisor Status Toggled",
+      module: "SUPERVISOR",
+      description: `${supervisor.name} was ${supervisor.isActive ? "activated" : "deactivated"} by ${req.user.name}`,
+    });
 
     return res.json({
       success: true,
@@ -124,7 +146,6 @@ export const deleteSupervisor = async (req, res) => {
       return res.status(404).json({ message: "Supervisor not found" });
     }
 
-    // 🔐 Safety: block delete if staff exists in ANY managed bay
     const staffCount = await User.countDocuments({
       role: "staff",
       assignedBay: { $in: supervisor.managedBays },
@@ -142,7 +163,7 @@ export const deleteSupervisor = async (req, res) => {
       req,
       action: "Supervisor Deleted",
       module: "SUPERVISOR",
-      description: `Supervisor ${supervisor.name} deleted`,
+      description: `${supervisor.name} was deleted by ${req.user.name}`,
     });
 
     return res.json({
@@ -171,10 +192,10 @@ export const getMyProfile = async (req, res) => {
   }
 };
 
-// ---------------- UPDATE MY PROFILE (FIXED) ----------------
+// ---------------- UPDATE MY PROFILE ----------------
 export const updateMyProfile = async (req, res) => {
   try {
-    const supervisorId = req.user.id; // ✅ SINGLE SOURCE OF TRUTH
+    const supervisorId = req.user.id;
 
     const { name, email, phone } = req.body;
 
@@ -188,6 +209,13 @@ export const updateMyProfile = async (req, res) => {
       return res.status(404).json({ message: "Supervisor not found" });
     }
 
+    await logActivity({
+      req,
+      action: "Profile Updated",
+      module: "SUPERVISOR",
+      description: `${updatedUser.name} updated their profile`,
+    });
+
     return res.json({
       success: true,
       user: updatedUser,
@@ -197,21 +225,19 @@ export const updateMyProfile = async (req, res) => {
   }
 };
 
-
 // ---------------- GET SUPERVISOR STATS ----------------
 export const getSupervisorStats = async (req, res) => {
   try {
     const supervisorId = req.user._id || req.user.id;
     const { period } = req.query;
 
-    const supervisor = await User.findById(supervisorId)
-      .populate("managedBays");
+    const supervisor = await User.findById(supervisorId).populate("managedBays");
 
     if (!supervisor || supervisor.role !== "supervisor") {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    const bayIds = supervisor.managedBays?.map(b => b._id) || [];
+    const bayIds = supervisor.managedBays?.map((b) => b._id) || [];
 
     if (bayIds.length === 0) {
       return res.json({
@@ -222,7 +248,6 @@ export const getSupervisorStats = async (req, res) => {
       });
     }
 
-    /* ---------- DATE FILTER ---------- */
     let dateFilter = {};
     const now = new Date();
 
@@ -234,14 +259,12 @@ export const getSupervisorStats = async (req, res) => {
       dateFilter = { $gte: new Date(now.setMonth(now.getMonth() - 1)) };
     }
 
-    /* ---------- STAFF COUNT (ALL BAYS) ---------- */
     const totalStaff = await User.countDocuments({
       role: "staff",
       approvalStatus: "approved",
       assignedBay: { $in: bayIds },
     });
 
-    /* ---------- ENTRIES (ALL BAYS) ---------- */
     const entries = await Entry.find({
       bayId: { $in: bayIds },
       inTime: dateFilter,
@@ -252,17 +275,16 @@ export const getSupervisorStats = async (req, res) => {
     const avgTime =
       entries.length > 0
         ? Math.round(
-            entries.reduce(
-              (sum, e) => sum + (e.processingTimeMs || 0),
-              0
-            ) / entries.length / 1000
+            entries.reduce((sum, e) => sum + (e.processingTimeMs || 0), 0) /
+              entries.length /
+              1000
           )
         : 0;
 
     return res.json({
       totalStaff,
       todayEntries,
-      avgProcessingTime: `${avgTime}s`,
+      avgProcessingTime: avgTime < 60 ? `${avgTime}s` : `${Math.floor(avgTime / 60)}m ${avgTime % 60}s`,
       activeBays: bayIds.length,
     });
   } catch (err) {
@@ -270,28 +292,24 @@ export const getSupervisorStats = async (req, res) => {
   }
 };
 
-
-
 // ---------------- GET STAFF PERFORMANCE ----------------
 export const getStaffPerformance = async (req, res) => {
   try {
     const supervisorId = req.user._id || req.user.id;
     const { period } = req.query;
 
-    const supervisor = await User.findById(supervisorId)
-      .populate("managedBays");
+    const supervisor = await User.findById(supervisorId).populate("managedBays");
 
     if (!supervisor || supervisor.role !== "supervisor") {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    const bayIds = supervisor.managedBays?.map(b => b._id) || [];
+    const bayIds = supervisor.managedBays?.map((b) => b._id) || [];
 
     if (bayIds.length === 0) {
       return res.json({ staff: [] });
     }
 
-    /* ---------- DATE FILTER ---------- */
     let dateFilter = {};
     const now = new Date();
 
@@ -303,12 +321,11 @@ export const getStaffPerformance = async (req, res) => {
       dateFilter = { $gte: new Date(now.setMonth(now.getMonth() - 1)) };
     }
 
-    /* ---------- ALL STAFF FROM ALL MANAGED BAYS ---------- */
     const staffList = await User.find({
       role: "staff",
       approvalStatus: "approved",
       assignedBay: { $in: bayIds },
-    }).select("name phone isActive");
+    }).select("name phone email isActive");
 
     const staff = await Promise.all(
       staffList.map(async (s) => {
@@ -320,10 +337,9 @@ export const getStaffPerformance = async (req, res) => {
         const avgTime =
           entries.length > 0
             ? Math.round(
-                entries.reduce(
-                  (sum, e) => sum + (e.processingTimeMs || 0),
-                  0
-                ) / entries.length / 1000
+                entries.reduce((sum, e) => sum + (e.processingTimeMs || 0), 0) /
+                  entries.length /
+                  1000
               )
             : 0;
 
@@ -331,6 +347,7 @@ export const getStaffPerformance = async (req, res) => {
           id: s._id,
           name: s.name,
           mobile: s.phone,
+          email: s.email,
           entries: entries.length,
           avgTime: `${avgTime}s`,
           status: s.isActive ? "Active" : "Inactive",
@@ -344,18 +361,13 @@ export const getStaffPerformance = async (req, res) => {
   }
 };
 
-
-
 // ---------------- GET RECENT UPDATES ----------------
 export const getRecentUpdates = async (req, res) => {
   try {
-    const supervisorId = req.user._id || req.user.id;
-
-    // Get recent activities - you can customize this based on your ActivityLog model
     const updates = [
-      { id: '1', time: 'Today • 09:20', action: 'Reviewed morning entries' },
-      { id: '2', time: 'Today • 08:45', action: 'Staff assignment updated' },
-      { id: '3', time: 'Yesterday • 18:10', action: 'Daily report completed' },
+      { id: "1", time: "Today • 09:20", action: "Reviewed morning entries" },
+      { id: "2", time: "Today • 08:45", action: "Staff assignment updated" },
+      { id: "3", time: "Yesterday • 18:10", action: "Daily report completed" },
     ];
 
     return res.json({ updates });

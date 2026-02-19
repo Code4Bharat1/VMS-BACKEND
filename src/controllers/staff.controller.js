@@ -14,7 +14,6 @@ export const createStaff = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 🔐 Detect who is creating staff
     const isAdmin = req.user.role === "admin";
 
     const staff = await User.create({
@@ -26,31 +25,27 @@ export const createStaff = async (req, res) => {
       assignedBay,
       approvalStatus: isAdmin ? "approved" : "pending",
       isActive: isAdmin ? true : false,
-
       requestSource: isAdmin ? "admin" : "supervisor",
-      createdBy: req.user._id, // keep this for reference
+      createdBy: req.user._id,
     });
-    
-   const creatorName = req.user.name;
-const creatorRole =
-  req.user.role === "admin" ? "Admin" : "Supervisor";
 
-await logActivity({
-  req,
-  action: "Staff Created",
-  module: "STAFF",
-  description: `${creatorRole} ${creatorName} created staff ${staff.name}`,
-});
+    const creatorName = req.user.name;
+    const creatorRole = req.user.role === "admin" ? "Admin" : "Supervisor";
+
+    await logActivity({
+      req,
+      action: "guard Created",
+      module: "STAFF",
+      description: `${creatorRole} ${creatorName} created Guard ${staff.name}`,
+    });
 
     return res.json({
       success: true,
       message: isAdmin
-        ? "Staff created successfully"
-        : "Staff created and sent for admin approval",
+        ? "guard created successfully"
+        : "guard created and sent for admin approval",
       staff,
     });
-
-    
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
@@ -63,16 +58,23 @@ export const approveStaff = async (req, res) => {
 
     const staff = await User.findById(id);
     if (!staff || staff.role !== "staff") {
-      return res.status(404).json({ message: "Staff not found" });
+      return res.status(404).json({ message: "guard not found" });
     }
 
     staff.approvalStatus = "approved";
     staff.isActive = true;
     await staff.save();
 
+    await logActivity({
+      req,
+      action: "guard Approved",
+      module: "STAFF",
+      description: `Admin ${req.user.name} approved guard ${staff.name}`,
+    });
+
     return res.json({
       success: true,
-      message: "Staff approved successfully",
+      message: "guard approved successfully",
     });
   } catch (err) {
     return res.status(500).json({ message: err.message });
@@ -113,7 +115,6 @@ export const getAllStaff = async (req, res) => {
   }
 };
 
-
 // ---------------- UPDATE STAFF ----------------
 export const updateStaff = async (req, res) => {
   try {
@@ -126,15 +127,21 @@ export const updateStaff = async (req, res) => {
       new: true,
     }).select("-password");
 
-    if (!updated) return res.status(404).json({ message: "Staff not found" });
+    if (!updated) return res.status(404).json({ message: "guard not found" });
 
-    return res.json({ success: true, message: "Staff updated", updated });
+    await logActivity({
+      req,
+      action: "guard Updated",
+      module: "STAFF",
+      description: `${req.user.role === "admin" ? "Admin" : "Supervisor"} ${req.user.name} updated guard ${updated.name}`,
+    });
+
+    return res.json({ success: true, message: "guard updated", updated });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
 };
 
-// ---------------- TOGGLE ACTIVE/INACTIVE ----------------
 // ---------------- TOGGLE ACTIVE/INACTIVE ----------------
 export const toggleStaffStatus = async (req, res) => {
   try {
@@ -142,41 +149,39 @@ export const toggleStaffStatus = async (req, res) => {
     const userId = req.user._id || req.user.id;
 
     const staff = await User.findById(id);
-    if (!staff) return res.status(404).json({ message: "Staff not found" });
+    if (!staff) return res.status(404).json({ message: "guard not found" });
 
-    // If user is supervisor, verify staff is in their bay
     if (req.user.role === "supervisor") {
-  const supervisor = await User.findById(userId).select("managedBays");
+      const supervisor = await User.findById(userId).select("managedBays");
 
-  const staffBayId =
-    typeof staff.assignedBay === "string"
-      ? staff.assignedBay
-      : staff.assignedBay._id;
+      const staffBayId =
+        typeof staff.assignedBay === "string"
+          ? staff.assignedBay
+          : staff.assignedBay._id;
 
-  const allowed = supervisor.managedBays.some(
-    (b) => String(b) === String(staffBayId)
-  );
+      const allowed = supervisor.managedBays.some(
+        (b) => String(b) === String(staffBayId)
+      );
 
-  if (!allowed) {
-    return res.status(403).json({ message: "Staff not in your bays" });
-  }
+      if (!allowed) {
+        return res.status(403).json({ message: "guard not in your bays" });
+      }
 
-  if (staff.approvalStatus !== "approved") {
-    return res.status(403).json({ message: "Cannot toggle pending staff" });
-  }
-}
-
+      if (staff.approvalStatus !== "approved") {
+        return res.status(403).json({ message: "Cannot toggle pending guard" });
+      }
+    }
 
     staff.isActive = !staff.isActive;
     await staff.save();
 
     await logActivity({
       req,
-      action: "Staff Status Toggled",
+      action: "guard Status Toggled",
       module: "STAFF",
-      description: `${req.user.role === "admin" ? "Admin" : "Supervisor"} ${
+      description: `${req.user.role === "admin" ? "Admin" : "Supervisor"} ${req.user.name} ${
         staff.isActive ? "activated" : "deactivated"
-      } staff ${staff.name}`,
+      } guard ${staff.name}`,
     });
 
     return res.json({
@@ -188,34 +193,30 @@ export const toggleStaffStatus = async (req, res) => {
     return res.status(500).json({ message: err.message });
   }
 };
+
 // ---------------- DELETE STAFF (ADMIN ONLY) ----------------
 export const deleteStaff = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // 1️⃣ Find staff user
     const staff = await User.findById(id);
 
-    // 2️⃣ Validate existence and role
     if (!staff || staff.role !== "staff") {
-      return res.status(404).json({ message: "Staff not found" });
+      return res.status(404).json({ message: "guard not found" });
     }
 
-    // 3️⃣ Delete staff
     await User.findByIdAndDelete(id);
 
-    // 4️⃣ Log activity
     await logActivity({
       req,
-      action: "Staff Deleted",
+      action: "guard Deleted",
       module: "STAFF",
-      description: `Admin deleted staff ${staff.name}`,
+      description: `Admin ${req.user.name} deleted guard ${staff.name}`,
     });
 
-    // 5️⃣ Send response
     return res.json({
       success: true,
-      message: "Staff deleted successfully",
+      message: "guard deleted successfully",
     });
   } catch (err) {
     return res.status(500).json({ message: err.message });
@@ -230,7 +231,7 @@ export const rejectStaff = async (req, res) => {
 
     const staff = await User.findById(id);
     if (!staff || staff.role !== "staff") {
-      return res.status(404).json({ message: "Staff not found" });
+      return res.status(404).json({ message: "guard not found" });
     }
 
     staff.approvalStatus = "rejected";
@@ -241,21 +242,20 @@ export const rejectStaff = async (req, res) => {
 
     await logActivity({
       req,
-      action: "Staff Rejected",
+      action: "guard Rejected",
       module: "STAFF",
-      description: `Admin rejected staff ${staff.name}. Reason: ${staff.rejectionReason}`,
+      description: `Admin ${req.user.name} rejected guard ${staff.name}. Reason: ${staff.rejectionReason}`,
     });
 
     return res.json({
       success: true,
-      message: "Staff rejected successfully",
+      message: "guard rejected successfully",
       staff,
     });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
 };
-
 
 // ---------------- SUPERVISOR ASSIGNS STAFF TO BAY ----------------
 export const assignStaffToBay = async (req, res) => {
@@ -276,15 +276,22 @@ export const assignStaffToBay = async (req, res) => {
 
     const staff = await User.findById(staffId);
     if (!staff || staff.role !== "staff") {
-      return res.status(404).json({ message: "Staff not found" });
+      return res.status(404).json({ message: "guard not found" });
     }
 
     staff.assignedBay = bayId;
     await staff.save();
 
+    await logActivity({
+      req,
+      action: "guard Assigned to Bay",
+      module: "STAFF",
+      description: `Supervisor ${supervisor.name} assigned guard ${staff.name} to bay`,
+    });
+
     return res.json({
       success: true,
-      message: "Staff assigned to bay successfully",
+      message: "guard assigned to bay successfully",
     });
   } catch (err) {
     return res.status(500).json({ message: err.message });

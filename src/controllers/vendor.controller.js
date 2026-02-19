@@ -1,4 +1,5 @@
 import { Vendor } from "../models/vendor.model.js";
+import { logActivity } from "../utils/ActivityLog.js";
 
 // ---------------- CREATE VENDOR ----------------
 export const createVendor = async (req, res) => {
@@ -27,11 +28,19 @@ export const createVendor = async (req, res) => {
       crNo,
     });
 
+    await logActivity({
+      req,
+      action: "Vendor Created",
+      module: "VENDOR",
+      description: `${req.user?.name || "Admin"} created vendor ${vendor.companyName} (Shop: ${vendor.shopId})`,
+    });
+
     res.json({ success: true, message: "Vendor created", vendor });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
 // ---------------- GET UNIQUE CATEGORIES ----------------
 export const getVendorCategories = async (req, res) => {
   try {
@@ -45,7 +54,6 @@ export const getVendorCategories = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 // ---------------- GET ALL VENDORS ----------------
 export const getVendors = async (req, res) => {
@@ -89,6 +97,13 @@ export const updateVendor = async (req, res) => {
       return res.status(404).json({ message: "Vendor not found" });
     }
 
+    await logActivity({
+      req,
+      action: "Vendor Updated",
+      module: "VENDOR",
+      description: `${req.user?.name || "Admin"} updated vendor ${updated.companyName} (Shop: ${updated.shopId})`,
+    });
+
     res.json({ success: true, message: "Vendor updated", updated });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -103,6 +118,13 @@ export const toggleVendorStatus = async (req, res) => {
 
     vendor.status = vendor.status === "active" ? "inactive" : "active";
     await vendor.save();
+
+    await logActivity({
+      req,
+      action: "Vendor Status Toggled",
+      module: "VENDOR",
+      description: `${req.user?.name || "Admin"} ${vendor.status === "active" ? "activated" : "deactivated"} vendor ${vendor.companyName} (Shop: ${vendor.shopId})`,
+    });
 
     res.json({
       success: true,
@@ -120,6 +142,13 @@ export const deleteVendor = async (req, res) => {
     const vendor = await Vendor.findByIdAndDelete(req.params.id);
 
     if (!vendor) return res.status(404).json({ message: "Vendor not found" });
+
+    await logActivity({
+      req,
+      action: "Vendor Deleted",
+      module: "VENDOR",
+      description: `${req.user?.name || "Admin"} deleted vendor ${vendor.companyName} (Shop: ${vendor.shopId})`,
+    });
 
     res.json({ success: true, message: "Vendor deleted" });
   } catch (err) {
